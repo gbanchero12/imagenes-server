@@ -13,6 +13,11 @@ const formidable = require('formidable')
 const path = require('path')
 const uploadDir = __dirname + "/files/"; // uploading the file to the same path as app.js
 
+app.get('*', function (req, res) {
+    const index = path.join(__dirname, 'build', 'index.html');
+    res.sendFile(index);
+  });
+
 app.post('/', async (req, res) => {
     let pathToFile = "";
     var form = new formidable.IncomingForm()
