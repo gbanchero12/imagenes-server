@@ -6,7 +6,7 @@ const app = express();
 const path = require('path');
 const fileupload = require("express-fileupload");
 const bodyParser = require("body-parser");
-app.use(bodyParser.json({limit: '10mb', extended: true}))
+app.use(bodyParser.json({ limit: '10mb', extended: true }))
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }))
 
 app.use(fileupload());
@@ -24,28 +24,31 @@ cloudinary.config({
 
 
 app.post('/', async (req, res) => {
-    const newpath = __dirname + "\\files\\";
-    const files = req.files;
-    const paths = [];
 
-    for (let key of Object.keys(files)) {
-        const filename = files[key].name;
-        await files[key].mv(`${newpath}${filename}`, (err) => {
-            if (err)
-                console.log(err);
-        });
-        paths.push({ url: `${newpath}${filename}`, name: `${filename}` });
-    }
+    try {
+        const newpath = __dirname + "\\files\\";
+        const files = req.files;
+        const paths = [];
 
-    for (let path of paths) {
-        await cloudinary.uploader.upload(path.url,
-            function (error, result) {
-                if (!error) {
-                    res.status(200).send(result.secure_url);
-                }
-                else { console.log(error); }
+        for (let key of Object.keys(files)) {
+            const filename = files[key].name;
+            await files[key].mv(`${newpath}${filename}`, (err) => {
+                if (err)
+                    console.log(err);
             });
-    }
+            paths.push({ url: `${newpath}${filename}`, name: `${filename}` });
+        }
+
+        for (let path of paths) {
+            await cloudinary.uploader.upload(path.url,
+                function (error, result) {
+                    if (!error) {
+                        res.status(200).send(result.secure_url);
+                    }
+                    else { console.log(error); }
+                });
+        }
+    } catch (err) { console.log(err) }
 });
 
 
