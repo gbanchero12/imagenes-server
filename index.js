@@ -1,57 +1,49 @@
-const express = require("express");
-const app = express();
-app.use(express.urlencoded({ extended: true }))
-app.use(express.json());
-const dotenv = require("dotenv");
-dotenv.config();
-
-
 const cloudinary = require("cloudinary").v2;
 
+// variables de entorno
 cloudinary.config({
-    cloud_name: 'hofj27rpw',
-    api_key: '818691961354294',
-    api_secret: 'dQb5NBCGM2VaoUkDRbzOwH2_b6A'
+    cloud_name: 'hgaukkacp',
+    api_key: '365913115355532',
+    api_secret: 'mg7cOJFmXcjQ3jNu1jo5HbmJxG0'
 });
 
-app.post('/images', async (req, res, next) => {
-    const newpath = __dirname + "\\files\\";
-    const files = req.files;
-    const paths = [];
+const express = require('express')
+const app = express()
+const formidable = require('formidable')
+const path = require('path')
+const uploadDir = __dirname + "\\files\\"; // uploading the file to the same path as app.js
 
+app.post('/', async (req, res) => {
+    let pathToFile = "";
+    var form = new formidable.IncomingForm()
+    form.multiples = true
+    form.keepExtensions = true
+    form.uploadDir = uploadDir
+    form.parse(req, (err, fields, files) => {
+        if (err) return res.status(500).json({ error: err })        
+    });
+    
+    // guarda el archivo en el file system
+    await form.on('fileBegin', function (name, file) {
+        const [fileName, fileExt] = file.name.split('.')
+        file.path = path.join(uploadDir, `${fileName}_${new Date().getTime()}.${fileExt}`)
+        pathToFile = file.path;
+    })
 
-    if (Object.keys(files).length < 0) {
-        res.status(400).send("No files recived");
-        return next();
-    }
-
-    for (let key of Object.keys(files)) {
-        const filename = files[key].name;
-        await files[key].mv(`${newpath}${filename}`, (err) => {
-            if (err)
-                console.log(err);
+    // guarda el archivo en cloudinary para poder visualizarlo u obtenerlo postiormente
+    await cloudinary.uploader.upload(pathToFile,
+        { resource_type: "auto" },
+        function (error, result) {
+            if (!error) {
+                res.status(200).send(result.secure_url);
+            }
+            else { console.log(error); }
         });
-        paths.push({ url: `${newpath}${filename}`, name: `${filename}` });
-    }
-
-    let urls = new Array();
-    for (let path of paths) {
-
-        await cloudinary.uploader.upload(path.url,
-            { resource_type: "auto" },
-            function (error, result) {
-                if (!error) {
-                    urls.push(result.secure_url)
-                }
-                else { console.log(error); }
-            });
-    }
-    res.status(200).send(urls);
-
 });
-
 
 
 
 app.listen(process.env.PORT || 5000, () => { console.log("app running on port", process.env.PORT) }
 );
+
+
