@@ -26,7 +26,7 @@ cloudinary.config({
 app.post('/', async (req, res) => {
 
     try {
-        const newpath = __dirname + "\\files\\";
+        const newpath = __dirname + "//files//";
         const files = req.files;
         const paths = [];
 
