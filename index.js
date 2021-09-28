@@ -11,7 +11,7 @@ const express = require('express')
 const app = express()
 const formidable = require('formidable')
 const path = require('path')
-const uploadDir = __dirname + "\\files\\"; // uploading the file to the same path as app.js
+const uploadDir = __dirname + "/files/"; // uploading the file to the same path as app.js
 
 app.post('/', async (req, res) => {
     let pathToFile = "";
