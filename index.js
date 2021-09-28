@@ -30,6 +30,10 @@ app.post('/', async (req, res) => {
         const files = req.files;
         const paths = [];
 
+        if (files === null || files === undefined) {
+            res.status(400).send({ "code": 101, "message": "No se recibieron imagenes" });
+        }
+
         for (let key of Object.keys(files)) {
             const filename = files[key].name;
             await files[key].mv(`${newpath}${filename}`, (err) => {
@@ -43,12 +47,15 @@ app.post('/', async (req, res) => {
             await cloudinary.uploader.upload(path.url,
                 function (error, result) {
                     if (!error) {
-                        res.status(200).send(result.secure_url);
+                        res.status(200).send({ "code": 100, "url": result.secure_url, "message": "Imagen subida correctamente" });
                     }
                     else { console.log(error); }
                 });
         }
-    } catch (err) { console.log(err) }
+    } catch (err) {
+        res.status(500).send({ "code": 102, "message": "Hubo un error al subir la imágen" });
+        console.log(err)
+    }
 });
 
 
