@@ -1,5 +1,19 @@
 const cloudinary = require("cloudinary").v2;
 
+
+const express = require('express');
+const app = express();
+const path = require('path');
+const fileupload = require("express-fileupload");
+const bodyParser = require("body-parser");
+app.use(bodyParser.json({limit: '10mb', extended: true}))
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }))
+
+app.use(fileupload());
+app.use(express.static("files"));
+const buildPath = path.join(__dirname, '..', 'build');
+app.use(express.static(buildPath));
+
 // variables de entorno
 cloudinary.config({
     cloud_name: 'hgaukkacp',
@@ -7,43 +21,31 @@ cloudinary.config({
     api_secret: 'mg7cOJFmXcjQ3jNu1jo5HbmJxG0'
 });
 
-const express = require('express')
-const app = express()
-const formidable = require('formidable')
-const path = require('path')
-const uploadDir = __dirname + "/files/"; // uploading the file to the same path as app.js
 
-app.get('*', function (req, res) {
-    const index = path.join(__dirname, 'build', 'index.html');
-    res.sendFile(index);
-  });
 
 app.post('/', async (req, res) => {
-    let pathToFile = "";
-    var form = new formidable.IncomingForm()
-    form.multiples = true
-    form.keepExtensions = true
-    form.uploadDir = uploadDir
-    form.parse(req, (err, fields, files) => {
-        if (err) return res.status(500).json({ error: err })        
-    });
-    
-    // guarda el archivo en el file system
-    await form.on('fileBegin', function (name, file) {
-        const [fileName, fileExt] = file.name.split('.')
-        file.path = path.join(uploadDir, `${fileName}_${new Date().getTime()}.${fileExt}`)
-        pathToFile = file.path;
-    })
+    const newpath = __dirname + "\\files\\";
+    const files = req.files;
+    const paths = [];
 
-    // guarda el archivo en cloudinary para poder visualizarlo u obtenerlo postiormente
-    await cloudinary.uploader.upload(pathToFile,
-        { resource_type: "auto" },
-        function (error, result) {
-            if (!error) {
-                res.status(200).send(result.secure_url);
-            }
-            else { console.log(error); }
+    for (let key of Object.keys(files)) {
+        const filename = files[key].name;
+        await files[key].mv(`${newpath}${filename}`, (err) => {
+            if (err)
+                console.log(err);
         });
+        paths.push({ url: `${newpath}${filename}`, name: `${filename}` });
+    }
+
+    for (let path of paths) {
+        await cloudinary.uploader.upload(path.url,
+            function (error, result) {
+                if (!error) {
+                    res.status(200).send(result.secure_url);
+                }
+                else { console.log(error); }
+            });
+    }
 });
 
 
